@@ -17,6 +17,8 @@
     var matrixLocation;
     var positionBuffer;
     var colorBuffer;
+    var horsesBuffer;
+    var horsesColorBuffer;
 
     function AddCameraAngle(dVal) {
         cameraAngle += dVal;
@@ -50,6 +52,18 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
         // Put geometry data into buffer
         setColors(gl);
+
+        // Create a buffer to put horses in
+        horsesBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, horsesBuffer);
+        setHorses(gl);
+
+        // Create a buffer to put horses color in
+        horsesColorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, horsesColorBuffer);
+        setHorsesColor(gl);
+
+        // buffer function
         function setGeometry(gl) {
             var positions = webglfigure.getDefaultBody();
             var matrix = webglm4.scaling(1, 1, 1);
@@ -71,6 +85,22 @@
                 webglfigure.getDefaultColor(),
                 gl.STATIC_DRAW);
         }
+
+        // Fill the buffer with horses
+        function setHorses(gl) {
+            gl.bufferData(
+                gl.ARRAY_BUFFER,
+                webglfigure.getHorsesBody(),
+                gl.STATIC_DRAW);
+        }
+
+        // Fill the buffer with horses color
+        function setHorsesColor(gl) {
+            gl.bufferData(
+                gl.ARRAY_BUFFER,
+                webglfigure.getHorsesColor(),
+                gl.STATIC_DRAW);
+        }
     }
 
     function radToDeg(r) {
@@ -81,26 +111,7 @@
         return d * Math.PI / 180;
     }
 
-    function drawScene() {
-        var cameraAngleRadiansY = degToRad(cameraAngle);
-        var cameraAngleRadiansX = degToRad(-45 + cameraView);
-        var fieldOfViewRadians = degToRad(60);
-        
-        webglUtils.resizeCanvasToDisplaySize(gl.canvas);
-        
-        // Tell WebGL how to convert from clip space to pixels
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        
-        // Clear the canvas AND the depth buffer.
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        
-        // Turn on culling. By default backfacing triangles
-        // will be culled.
-        gl.enable(gl.CULL_FACE);
-        
-        // Enable the depth buffer
-        gl.enable(gl.DEPTH_TEST);
-        
+    function drawGameBoard(viewProjectionMatrix) {
         // Tell it to use our program (pair of shaders)
         gl.useProgram(program);
         
@@ -133,10 +144,100 @@
         var offset = 0;               // start at the beginning of the buffer
         gl.vertexAttribPointer(
             colorLocation, size, type, normalize, stride, offset);
+
+        // draw game board
+        var numFsX = gameRule.nGameSideBoard;
+        var numFsY = gameRule.nGameSideBoard;
+        var nOffset = webglfigure.nDefaultBoardGap;
+        for (var ix = -(numFsX * 0.5); ix <= (numFsX * 0.5); ++ix) {
+            for (var iy = -(numFsY * 0.5); iy <= (numFsY * 0.5); ++iy) {
+                // starting with the view projection matrix
+                // compute a matrix for the F
+                var matrix = webglm4.translate(viewProjectionMatrix, nOffset * ix, 0, nOffset * iy);
+                
+                // Set the matrix.
+                gl.uniformMatrix4fv(matrixLocation, false, matrix);
+    
+                // Draw the geometry.
+                var primitiveType = gl.TRIANGLES;
+                var offset = 0;
+                var count = 6 * 6;
+                gl.drawArrays(primitiveType, offset, count);
+            }
+        }
+    }
+
+    function drawGameHorses(viewProjectionMatrix, xPos, zPos) {
+        // Tell it to use our program (pair of shaders)
+        gl.useProgram(program);
         
-        var numFs = 5;
-        var radius = 200;
+        // Turn on the position attribute
+        gl.enableVertexAttribArray(positionLocation);
         
+        // Bind the position buffer.
+        gl.bindBuffer(gl.ARRAY_BUFFER, horsesBuffer);
+        
+        // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+        var size = 3;          // 3 components per iteration
+        var type = gl.FLOAT;   // the data is 32bit floats
+        var normalize = false; // don't normalize the data
+        var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+        var offset = 0;        // start at the beginning of the buffer
+        gl.vertexAttribPointer(
+            positionLocation, size, type, normalize, stride, offset);
+        
+        // Turn on the color attribute
+        gl.enableVertexAttribArray(colorLocation);
+        
+        // Bind the color buffer.
+        gl.bindBuffer(gl.ARRAY_BUFFER, horsesColorBuffer);
+        
+        // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
+        var size = 3;                 // 3 components per iteration
+        var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
+        var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
+        var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+        var offset = 0;               // start at the beginning of the buffer
+        gl.vertexAttribPointer(
+            colorLocation, size, type, normalize, stride, offset);
+
+        var nOffset = webglfigure.nDefaultBoardGap;
+        var nXPos = xPos * nOffset;
+        var nYPos = nOffset * 0.5;
+        var nZPos = zPos * nOffset;
+        var matrix = webglm4.translate(viewProjectionMatrix, nXPos, nYPos, nZPos);
+            
+        // Set the matrix.
+        gl.uniformMatrix4fv(matrixLocation, false, matrix);
+
+        // Draw the geometry.
+        var primitiveType = gl.TRIANGLES;
+        var offset = 0;
+        var count = 3 * 6;
+        gl.drawArrays(primitiveType, offset, count);
+    }
+
+    function drawScene() {
+        var cameraAngleRadiansY = degToRad(cameraAngle);
+        var cameraAngleRadiansX = degToRad(-45 + cameraView);
+        var fieldOfViewRadians = degToRad(60);
+        
+        webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+        
+        // Tell WebGL how to convert from clip space to pixels
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        
+        // Clear the canvas AND the depth buffer.
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        
+        // Turn on culling. By default backfacing triangles
+        // will be culled.
+        gl.enable(gl.CULL_FACE);
+        
+        // Enable the depth buffer
+        gl.enable(gl.DEPTH_TEST);
+        
+        var radius = 250;
         // Compute the projection matrix
         var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
         var zNear = 1;
@@ -153,15 +254,13 @@
         
         // Compute a view projection matrix
         var viewProjectionMatrix = webglm4.multiply(projectionMatrix, viewMatrix);
-        
-        // Set the matrix.
-        gl.uniformMatrix4fv(matrixLocation, false, viewProjectionMatrix);
-        
-        // Draw the geometry.
-        var primitiveType = gl.TRIANGLES;
-        var offset = 0;
-        var count = 6 * 6;
-        gl.drawArrays(primitiveType, offset, count);
+
+        // draw game board
+        drawGameBoard(viewProjectionMatrix);
+
+        // draw game horses
+        var userPos = gameRule.getUserPosition();
+        drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1]);
     }
 
     return {

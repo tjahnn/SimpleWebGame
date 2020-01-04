@@ -37,8 +37,8 @@
     }
   `;
 
-    return {
-      vertextShader,
-      fragmentShader,
-    };
+  return {
+    vertextShader,
+    fragmentShader,
+  };
 }));

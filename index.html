@@ -22,6 +22,7 @@ for webgl-utils, m3, m4, and webgl-lessons-ui.
 <script src="shader/webgl-shader.js"></script>
 <script src="figure/webgl-figure.js"></script>
 <script src="webgl_main.js"></script>
+<script src="game_rule.js"></script>
 <script>
 "use strict";
 
@@ -45,6 +46,8 @@ window.onkeydown = function() {
     webglMain.AddCameraAngle(10);
   }else if(event.keyCode == 40) { // down
     webglMain.AddCameraView(10);
+  }else if(event.keyCode == 32) { // space
+    gameRule.addUserPos(3);
   }
   webglMain.drawScene();
 }
