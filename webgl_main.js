@@ -67,8 +67,9 @@
         function setGeometry(gl) {
             var positions = webglfigure.getDefaultBody();
             var matrix = webglm4.scaling(1, 1, 1);
-            
+            var xOffset = webglfigure.nDefaultBoardGap * 0.5;
             for (var ii = 0; ii < positions.length; ii += 3) {
+                positions[ii + 0] += xOffset;
                 var vector = webglm4.vectorMultiply([positions[ii + 0], positions[ii + 1], positions[ii + 2], 1], matrix);
                 positions[ii + 0] = vector[0];
                 positions[ii + 1] = vector[1];
@@ -149,11 +150,15 @@
         var numFsX = gameRule.nGameSideBoard;
         var numFsY = gameRule.nGameSideBoard;
         var nOffset = webglfigure.nDefaultBoardGap;
-        for (var ix = -(numFsX * 0.5); ix <= (numFsX * 0.5); ++ix) {
-            for (var iy = -(numFsY * 0.5); iy <= (numFsY * 0.5); ++iy) {
+        for (var ix = -(numFsX * 0.5); ix < (numFsX * 0.5); ++ix) {
+            for (var iy = -(numFsY * 0.5); iy < (numFsY * 0.5); ++iy) {
                 // starting with the view projection matrix
                 // compute a matrix for the F
                 var matrix = webglm4.translate(viewProjectionMatrix, nOffset * ix, 0, nOffset * iy);
+                var colorBack = (ix + iy);
+                if(0 == (colorBack % 2)) {
+                    matrix = webglm4.xRotate(matrix, Math.PI);
+                }
                 
                 // Set the matrix.
                 gl.uniformMatrix4fv(matrixLocation, false, matrix);
@@ -205,7 +210,7 @@
         var nXPos = xPos * nOffset;
         var nYPos = nOffset * 0.5;
         var nZPos = zPos * nOffset;
-        var matrix = webglm4.translate(viewProjectionMatrix, nXPos, nYPos, nZPos);
+        var matrix = webglm4.translate(viewProjectionMatrix, -10 + nXPos, nYPos, -20 + nZPos);
             
         // Set the matrix.
         gl.uniformMatrix4fv(matrixLocation, false, matrix);

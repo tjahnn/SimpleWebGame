@@ -16,15 +16,19 @@
         *   *
         *   *
         *****
+        0  1  2  3  4  5  6  7  8
+        9  10 11 12 13 14 15 16 17
+        18 19 20 21 22 23 24 25 26
+        27 28 29 30 31 32 33 34 35
     */
     var nGameSideBoard = 10;
     var nTotalGameBoard = (nGameSideBoard * 2) + ((nGameSideBoard - 2) * 2);
-    var nGameEndPoint = [0, nTotalGameBoard + 1];
+    var nGameEndPoint = [0, nTotalGameBoard - 1];
     var nGameTerningPoint = [
             0,
-            nGameSideBoard,
-            nGameSideBoard + (nGameSideBoard - 1), 
-            nGameSideBoard + (nGameSideBoard - 1) * 2];
+            nGameSideBoard - 1,
+            (nGameSideBoard - 1) * 2, 
+            (nGameSideBoard - 1) * 3];
     
     var nUserPos = 0;
 
@@ -52,12 +56,12 @@
             basePos[1] = 5 - nGap;
         }else if(1 == nTPIndex) {
             basePos[0] = 5 - nGap;
-            basePos[1] = -5;
+            basePos[1] = -4;
         }else if(2 == nTPIndex) {
-            basePos[0] = -5;
-            basePos[1] = -5 + nGap;
+            basePos[0] = -4;
+            basePos[1] = -4 + nGap;
         }else if(3 == nTPIndex) {
-            basePos[0] = -5 + nGap;
+            basePos[0] = -4 + nGap;
             basePos[1] = 5;
         }
 
@@ -65,7 +69,7 @@
     }
     
     function getUserPosition() {
-        while(nUserPos >= nTotalGameBoard + 1)
+        while(nUserPos >= nTotalGameBoard)
             nUserPos -= nTotalGameBoard;
 
         return getPrevTerningPoint(nUserPos);
