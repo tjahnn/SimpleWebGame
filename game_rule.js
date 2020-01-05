@@ -29,16 +29,6 @@
             nGameSideBoard - 1,
             (nGameSideBoard - 1) * 2, 
             (nGameSideBoard - 1) * 3];
-    
-    var nUserPos = 0;
-
-    function getUserPos() {
-        return nUserPos;
-    }
-
-    function addUserPos(nVar) {
-        nUserPos += nVar;
-    }
 
     function getPrevTerningPoint(nPos) {
         var nTPIndex = 0;
@@ -68,7 +58,7 @@
         return basePos;
     }
     
-    function getUserPosition() {
+    function getUserPosition(nUserPos) {
         while(nUserPos >= nTotalGameBoard)
             nUserPos -= nTotalGameBoard;
 
@@ -78,8 +68,6 @@
     return {
         nGameSideBoard: nGameSideBoard,
         getUserPosition: getUserPosition,
-        getUserPos: getUserPos,
-        addUserPos: addUserPos,
     };
   }));
   

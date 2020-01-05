@@ -12,6 +12,38 @@
     var nUserNum = 0;
     var ws;
     var connectionID = 0;
+    var arUserDice = [0];
+
+    function getUserNum() {
+        return nUserNum;
+    }
+
+    function addUserPos(nVar) {
+        arUserDice[connectionID] += nVar;
+
+        // send server
+        if(ws.readyState == ws.OPEN) {
+            var diceInfo = {code: "dice", id: connectionID, dice: arUserDice[connectionID]};
+            var data = JSON.stringify(diceInfo);
+            ws.send(data);
+        }
+    }
+
+    function getUserDice(nUserIndex) {
+        if(nUserIndex >= arUserDice.length)
+            return 0;
+        return arUserDice[nUserIndex];
+    }
+
+    function isMyHorses(nII) {
+        return nII === connectionID;
+    }
+
+    function cleanUpUserInfo() {
+        nUserNum = 0;
+        connectionID = 0;
+        arUserDice = [0];
+    }
 
     function connectServer() {
         //ws = new WebSocket("ws://localhost:8100");
@@ -38,17 +70,29 @@
                 // alert(connectionID + ", " + nUserNum);
                 document.getElementById("info").innerHTML = nUserNum;
             }else if("userNum" == data.code) {
+                nUserNum = data.userNum;
+                arUserDice = data.dice;
+                if(nUserNum != arUserDice.length)
+                    alert("dice error");
                 document.getElementById("info").innerHTML = data.userNum;
-                
+            }else if("dice" == data.code) {
+                arUserDice = data.dice;
+                alert("dice update : " + arUserDice);
             }
+
+            webglMain.drawScene();
         };
 
         ws.onclose = function(e){
             alert("onclose : " + e);
+            cleanUpUserInfo();
+            webglMain.drawScene();
         }
 
         ws.onerror = function(e) {
             alert("error");
+            cleanUpUserInfo();
+            webglMain.drawScene();
         }
     }
 
@@ -62,6 +106,10 @@
     }
 
     return {
+        getUserNum: getUserNum,
+        addUserPos: addUserPos,
+        getUserDice: getUserDice,
+        isMyHorses: isMyHorses,
         connectServer: connectServer,
         closeServer: closeServer
     };

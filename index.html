@@ -56,7 +56,7 @@ window.onkeydown = function() {
     webglMain.AddCameraView(10);
   }else if(event.keyCode == 32) { // space
     var result = ((Math.floor(Math.random() * 10)) % 6) + 1;
-    gameRule.addUserPos(result);
+    gameUser.addUserPos(result);
   }
   webglMain.drawScene();
 }
@@ -76,7 +76,7 @@ window.onbeforeunload = function(e) {
 var div1 = document.getElementById("dice");
 div1.addEventListener('click', function (event) {
   var result = ((Math.floor(Math.random() * 10)) % 6) + 1;
-  gameRule.addUserPos(result);
+  gameUser.addUserPos(result);
   webglMain.drawScene();
 });
 

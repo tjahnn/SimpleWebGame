@@ -3,15 +3,36 @@ var WebSocketServer = require("ws").Server;
 var wss = new WebSocketServer({address:"175.195.84.133", port:8100});
 
 var connectionList = [];
+var diceList = [];
 
-function UpdateUserInfo() {
+// user info
+function initUserInfo(ws) {
+    connectionList.push(ws);
+    diceList.push(0);
+}
+
+function delUserInfo(nUserIndex) {
+    connectionList.splice(nUserIndex, 1);
+    diceList.splice(nUserIndex, 1);
+}
+
+function displayUserInfo() {
+    console.log("connectionList[" + connectionList + "]");
+    console.log("diceList[" + diceList + "]");
+}
+
+function refreshUserInfo() {
     // check user open
     for(var ii = 0; ii < connectionList.length; ++ii) {
         if(connectionList[ii].readyState != connectionList[ii].OPEN) {
-            connectionList.splice(ii, 1);
+            delUserInfo(ii);
             --ii;
         }
     }
+}
+
+function UpdateUserInfo() {
+    refreshUserInfo();
 
     console.log();
     console.log("current user info : " + connectionList);
@@ -21,11 +42,37 @@ function UpdateUserInfo() {
     for(var ii = 0; ii < connectionList.length; ++ii) {
         // console.log(connectionList[ii].readyState);
         if(connectionList[ii].readyState == connectionList[ii].OPEN) {
-            var connectionInfo = {code: "userNum", userNum: connectionList.length};
+            var connectionInfo = {code: "userNum", userNum: connectionList.length, dice: diceList};
             var data = JSON.stringify(connectionInfo);
             connectionList[ii].send(data);
         }else{
-            connectionList.splice(ii, 1);
+            delUserInfo(ii);
+            --ii;
+        }
+    }
+}
+
+function UpdateUserDice(nUserIndex, nUserVar) {
+    if(connectionList.length <= nUserIndex) {
+        console.log("invalid Dice User Index : " + nUserIndex + ", var : " + nUserVar);
+        return;
+    }
+
+    if(connectionList[nUserIndex].readyState == connectionList[nUserIndex].OPEN) {
+        diceList[nUserIndex] = nUserVar;
+    }
+
+    // notice User Dice
+    console.log("send User Dice");
+    for(var ii = 0; ii < connectionList.length; ++ii) {
+        // console.log(connectionList[ii].readyState);
+        if(connectionList[ii].readyState == connectionList[ii].OPEN) {
+            var diceInfo = {code: "dice", dice: diceList};
+            var data = JSON.stringify(diceInfo);
+            console.log(data);
+            connectionList[ii].send(data);
+        }else{
+            delUserInfo(ii);
             --ii;
         }
     }
@@ -33,7 +80,7 @@ function UpdateUserInfo() {
 
 wss.on("connection", function(ws, request) {
     console.log("connected " + ws + ", request " + request);
-    connectionList.push(ws);
+    initUserInfo(ws);
 
     ws.on("message", function(msg) {
         console.log();
@@ -50,9 +97,11 @@ wss.on("connection", function(ws, request) {
 
         console.log("data[" + data + "]");
         if("close" == data.code) {
-            connectionList.splice(data.id, 1);
-            console.log("connectionList[" + connectionList + "]");
+            delUserInfo(data.id);
+            displayUserInfo();
             UpdateUserInfo();
+        }else if("dice" == data.code) {
+            UpdateUserDice(data.id, data.dice);
         }
         console.log();
     });

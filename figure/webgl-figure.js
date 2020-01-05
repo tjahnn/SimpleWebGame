@@ -149,6 +149,39 @@
         ]);
     }
 
+    function getHorsesBodyMy() {
+      return new Float32Array([
+          // down
+          -5, 5,  5,
+          5,  5,  5,
+          -5, 5,  -5,
+
+          -5, 5,  -5,
+          5,  5,  5,
+          5,  5,  -5,
+
+          // front
+          -5,  5,  5,
+          0, 0,   0,
+          5,  5,  5,
+
+          // left
+          -5,  5,  -5,
+          0,   0,   0,
+          -5,  5,  5,
+
+          // right
+          5,  5,  5,
+          0,  0,   0,
+          5,  5,  -5,
+
+          // back
+          -5,  5,  -5,
+          5,  5,  -5,
+          0, 0,   0,
+        ]);
+    }
+
     function getHorsesColor() {
       return new Uint8Array([
         // down
@@ -187,6 +220,7 @@
       getDefaultBody: getDefaultBody,
       getDefaultColor: getDefaultColor,
       getHorsesBody: getHorsesBody,
+      getHorsesBodyMy: getHorsesBodyMy,
       getHorsesColor: getHorsesColor,
     };
   }));

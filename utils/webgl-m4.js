@@ -9,6 +9,15 @@
       root.webglm4 = factory.call(root);
     }
   }(this, function() {
+    function newMatrix() {
+      return [
+         1,  0,  0,  0,
+         0,  1,  0,  0,
+         0,  0,  1,  0,
+         0,  0,  0,  1,
+      ];
+    }
+
     function perspective(fieldOfViewInRadians, aspect, near, far) {
       var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
       var rangeInv = 1.0 / (near - far);
@@ -255,20 +264,21 @@
     }
   
     return {
-        perspective: perspective,
-        projection: projection,
-        multiply: multiply,
-        translation: translation,
-        xRotation: xRotation,
-        yRotation: yRotation,
-        zRotation: zRotation,
-        scaling: scaling,
-        translate: translate,
-        xRotate: xRotate,
-        yRotate: yRotate,
-        zRotate: zRotate,
-        scale: scale,
-        inverse: inverse,
-        vectorMultiply: vectorMultiply,
-      };
+      newMatrix: newMatrix,
+      perspective: perspective,
+      projection: projection,
+      multiply: multiply,
+      translation: translation,
+      xRotation: xRotation,
+      yRotation: yRotation,
+      zRotation: zRotation,
+      scaling: scaling,
+      translate: translate,
+      xRotate: xRotate,
+      yRotate: yRotate,
+      zRotate: zRotate,
+      scale: scale,
+      inverse: inverse,
+      vectorMultiply: vectorMultiply,
+    };
   }));

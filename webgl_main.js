@@ -18,6 +18,7 @@
     var positionBuffer;
     var colorBuffer;
     var horsesBuffer;
+    var horsesBufferMy;
     var horsesColorBuffer;
 
     function AddCameraAngle(dVal) {
@@ -56,7 +57,11 @@
         // Create a buffer to put horses in
         horsesBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, horsesBuffer);
-        setHorses(gl);
+        setHorses(gl, false);
+
+        horsesBufferMy = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, horsesBufferMy);
+        setHorses(gl, true);
 
         // Create a buffer to put horses color in
         horsesColorBuffer = gl.createBuffer();
@@ -88,11 +93,18 @@
         }
 
         // Fill the buffer with horses
-        function setHorses(gl) {
-            gl.bufferData(
-                gl.ARRAY_BUFFER,
-                webglfigure.getHorsesBody(),
-                gl.STATIC_DRAW);
+        function setHorses(gl, bMy) {
+            if(bMy) {
+                gl.bufferData(
+                    gl.ARRAY_BUFFER,
+                    webglfigure.getHorsesBodyMy(),
+                    gl.STATIC_DRAW);
+            }else {
+                gl.bufferData(
+                    gl.ARRAY_BUFFER,
+                    webglfigure.getHorsesBody(),
+                    gl.STATIC_DRAW);
+            }
         }
 
         // Fill the buffer with horses color
@@ -172,7 +184,7 @@
         }
     }
 
-    function drawGameHorses(viewProjectionMatrix, xPos, zPos) {
+    function drawGameHorses(viewProjectionMatrix, xPos, zPos, bMy) {
         // Tell it to use our program (pair of shaders)
         gl.useProgram(program);
         
@@ -180,7 +192,11 @@
         gl.enableVertexAttribArray(positionLocation);
         
         // Bind the position buffer.
-        gl.bindBuffer(gl.ARRAY_BUFFER, horsesBuffer);
+        if(bMy) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, horsesBufferMy);
+        }else {
+            gl.bindBuffer(gl.ARRAY_BUFFER, horsesBuffer);
+        }
         
         // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
         var size = 3;          // 3 components per iteration
@@ -264,8 +280,12 @@
         drawGameBoard(viewProjectionMatrix);
 
         // draw game horses
-        var userPos = gameRule.getUserPosition();
-        drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1]);
+        for(var ii = 0; ii < gameUser.getUserNum(); ++ii) {
+            var isMy = gameUser.isMyHorses(ii);
+            var UserDice = gameUser.getUserDice(ii);
+            var userPos = gameRule.getUserPosition(UserDice);
+            drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1], isMy);
+        }
     }
 
     return {
