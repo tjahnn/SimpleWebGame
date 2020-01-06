@@ -13,7 +13,7 @@ window.addEventListener("load", function(){
 				"scripts/dom.js",
 				"scripts/game.js",
 				"scripts/screen.splash.js",
-				"scripts/screen.main-menu.js"
+				"scripts/screen.main-menu.js",
 			],
 			//모든 파일의 로드 및 실행이 완료되면 호출된다.
 			complete: function(){

@@ -239,6 +239,8 @@
     }
 
     function drawScene() {
+        if(!gameUser.isLoggin()) return;
+
         var cameraAngleRadiansY = degToRad(cameraAngle);
         var cameraAngleRadiansX = degToRad(-45 + cameraView);
         var fieldOfViewRadians = degToRad(60);

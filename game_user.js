@@ -12,6 +12,8 @@
     var nUserNum = 0;
     var ws;
     var connectionID = 0;
+    var userID = "";
+    var userLoggin = false;
     var arUserDice = [0];
 
     function getUserNum() {
@@ -20,6 +22,10 @@
 
     function addUserPos(nVar) {
         arUserDice[connectionID] += nVar;
+
+        var DiceLimit = gameRule.getTotalGameBoard();
+        while(arUserDice[connectionID] >= DiceLimit)
+            arUserDice[connectionID] -= DiceLimit;
 
         // send server
         if(ws.readyState == ws.OPEN) {
@@ -45,12 +51,44 @@
         arUserDice = [0];
     }
 
+    function registerServer(id, pw) {
+        if(ws.readyState == ws.OPEN) {
+            var registerInfo = {code: "register", connectionId: connectionID, id: id, pw: pw};
+            var data = JSON.stringify(registerInfo);
+            ws.send(data);
+        }
+    }
+
+    function logginServer(id, pw) {
+        if(ws.readyState == ws.OPEN) {
+            var logginInfo = {code: "loggin", connectionId: connectionID, id: id, pw: pw};
+            var data = JSON.stringify(logginInfo);
+            ws.send(data);
+        }
+    }
+
+    function isLoggin() {
+        return userLoggin;
+    }
+
+    function logginOper(data) {
+        userID = data.id;
+        arUserDice = data.dice;
+        userLoggin = true;
+        document.getElementById("my_name").style.display = "none";
+        document.getElementById("my_password").style.display = "none";
+        document.getElementById("my_loggin").style.display = "none";
+        var logginInfo = document.getElementById("userInfo");
+        logginInfo.style.display = "block";
+        logginInfo.innerText = "반갑습니다. " + userID + " 님";
+    }
+
     function connectServer() {
         //ws = new WebSocket("ws://localhost:8100");
         ws = new WebSocket("ws://175.195.84.133:8100");
 
         ws.onopen = function(e){
-            alert("open");
+            //alert("connect server");
         };
 
         ws.onmessage = function(e){
@@ -64,7 +102,9 @@
                 data = {}; 
             }
 
-            if("connect" == data.code) {
+            if("loggin" == data.code) {
+                logginOper(data);
+            }else if("connect" == data.code) {
                 connectionID = data.id;
                 nUserNum = data.userNum;
                 // alert(connectionID + ", " + nUserNum);
@@ -79,7 +119,7 @@
             }else if("dice" == data.code) {
                 connectionID = data.id;
                 arUserDice = data.dice;
-                alert("dice update : " + arUserDice);
+                //alert("dice update : " + arUserDice);
             }
 
             webglMain.drawScene();
@@ -108,6 +148,9 @@
     }
 
     return {
+        isLoggin,
+        registerServer: registerServer,
+        logginServer: logginServer,
         getUserNum: getUserNum,
         addUserPos: addUserPos,
         getUserDice: getUserDice,

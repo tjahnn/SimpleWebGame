@@ -64,8 +64,13 @@
 
         return getPrevTerningPoint(nUserPos);
     }
+
+    function getTotalGameBoard() {
+        return nTotalGameBoard;
+    }
     
     return {
+        getTotalGameBoard: getTotalGameBoard,
         nGameSideBoard: nGameSideBoard,
         getUserPosition: getUserPosition,
     };

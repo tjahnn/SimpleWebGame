@@ -1,0 +1,84 @@
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>WebGL - 3D Camera</title>
+  <!-- <link type="text/css" href="utils/webgl-tutorials.css" rel="stylesheet" /> -->
+</head>
+<body>
+  <div style="text-align:center;">
+    <div id="dice">주사위</div>
+    <div id="info">0</div>
+  </div>
+  <canvas id="canvas"></canvas>
+</body>
+<!--
+for most samples webgl-utils only provides shader compiling/linking and
+canvas resizing because why clutter the examples with code that's the same in every sample.
+See http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
+and http://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
+for webgl-utils, m3, m4, and webgl-lessons-ui.
+-->
+<script src="utils/webgl-utils.js"></script>
+<script src="utils/webgl-m4.js"></script>
+<script src="shader/webgl-shader.js"></script>
+<script src="figure/webgl-figure.js"></script>
+<script src="webgl_main.js"></script>
+<script src="game_rule.js"></script>
+<script src="game_user.js"></script>
+<script>
+"use strict";
+
+// connect server
+gameUser.connectServer();
+
+// Get A WebGL context
+/** @type {HTMLCanvasElement} */
+var canvas = document.getElementById("canvas");
+canvas.width = window.innerWidth-50;
+canvas.height = window.innerHeight-50;
+var gl = canvas.getContext("webgl");
+
+// init webgl
+webglMain.drawInit(gl);
+
+// event handler
+window.onkeydown = function() {
+  if(event.keyCode == 37) { // left
+    webglMain.AddCameraAngle(-10);
+  }else if(event.keyCode == 38) { // up
+    webglMain.AddCameraView(-10);
+  }else if(event.keyCode == 39) { // right
+    webglMain.AddCameraAngle(10);
+  }else if(event.keyCode == 40) { // down
+    webglMain.AddCameraView(10);
+  }else if(event.keyCode == 32) { // space
+    var result = ((Math.floor(Math.random() * 10)) % 6) + 1;
+    gameUser.addUserPos(result);
+  }
+  webglMain.drawScene();
+}
+
+window.onresize = function() {
+  canvas.width = window.innerWidth - 1;
+  canvas.height = window.innerHeight - 1;
+  webglMain.drawScene();
+}
+
+window.onbeforeunload = function(e) {
+  gameUser.closeServer();
+}
+
+// element event
+var div1 = document.getElementById("dice");
+div1.addEventListener('click', function (event) {
+  var result = ((Math.floor(Math.random() * 10)) % 6) + 1;
+  gameUser.addUserPos(result);
+  webglMain.drawScene();
+});
+
+webglMain.drawScene();
+</script>
+</html>

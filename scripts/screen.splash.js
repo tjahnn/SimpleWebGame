@@ -17,6 +17,6 @@ jewel.screens["splash-screen"] = (function() {
 	}
 	
 	return {
-		run : run
+		run: run
 	};
 })();
