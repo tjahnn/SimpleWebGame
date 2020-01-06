@@ -204,6 +204,7 @@ wss.on("connection", function(ws, request) {
 
     var nUserSize = initUserInfo(ws);
     sendConnectInfo(nUserSize);
+    UpdateUserInfo();
 });
 
 wss.on("closedconnection", function(id) {
