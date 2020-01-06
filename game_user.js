@@ -72,10 +72,12 @@
             }else if("userNum" == data.code) {
                 nUserNum = data.userNum;
                 arUserDice = data.dice;
+                connectionID = data.id;
                 if(nUserNum != arUserDice.length)
                     alert("dice error");
                 document.getElementById("info").innerHTML = data.userNum;
             }else if("dice" == data.code) {
+                connectionID = data.id;
                 arUserDice = data.dice;
                 alert("dice update : " + arUserDice);
             }

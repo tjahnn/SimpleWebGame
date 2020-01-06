@@ -42,7 +42,7 @@ function UpdateUserInfo() {
     for(var ii = 0; ii < connectionList.length; ++ii) {
         // console.log(connectionList[ii].readyState);
         if(connectionList[ii].readyState == connectionList[ii].OPEN) {
-            var connectionInfo = {code: "userNum", userNum: connectionList.length, dice: diceList};
+            var connectionInfo = {code: "userNum", id: ii, userNum: connectionList.length, dice: diceList};
             var data = JSON.stringify(connectionInfo);
             connectionList[ii].send(data);
         }else{
@@ -67,7 +67,7 @@ function UpdateUserDice(nUserIndex, nUserVar) {
     for(var ii = 0; ii < connectionList.length; ++ii) {
         // console.log(connectionList[ii].readyState);
         if(connectionList[ii].readyState == connectionList[ii].OPEN) {
-            var diceInfo = {code: "dice", dice: diceList};
+            var diceInfo = {code: "dice", id: ii, dice: diceList};
             var data = JSON.stringify(diceInfo);
             console.log(data);
             connectionList[ii].send(data);
