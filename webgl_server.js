@@ -1,6 +1,13 @@
 var WebSocketServer = require("ws").Server;
+var WebServerIp = require("public-ip");
+var public_ip;
+var server_port = 8100;
+(async()=>{
+    public_ip = await WebServerIp.v4();
+    console.log("server open ip : " + public_ip + ", port : " + server_port);
+})();
 // var wss = new WebSocketServer({port:8100});
-var wss = new WebSocketServer({address:"175.195.84.133", port:8100});
+var wss = new WebSocketServer({address:String(public_ip), port:server_port});
 
 var connectionList = [];
 var diceList = [];
