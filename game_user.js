@@ -11,28 +11,13 @@
   }(this, function() {
     var nUserNum = 0;
     var ws;
-    var connectionID = 0;
     var userID = "";
     var userLoggin = false;
-    var arUserDice = [0];
+    var userTeam = "";
+    var arUserDice = [];
 
     function getUserNum() {
         return nUserNum;
-    }
-
-    function addUserPos(nVar) {
-        arUserDice[connectionID] += nVar;
-
-        var DiceLimit = gameRule.getTotalGameBoard();
-        while(arUserDice[connectionID] >= DiceLimit)
-            arUserDice[connectionID] -= DiceLimit;
-
-        // send server
-        if(ws.readyState == ws.OPEN) {
-            var diceInfo = {code: "dice", id: connectionID, dice: arUserDice[connectionID]};
-            var data = JSON.stringify(diceInfo);
-            ws.send(data);
-        }
     }
 
     function getUserDice(nUserIndex) {
@@ -41,19 +26,28 @@
         return arUserDice[nUserIndex];
     }
 
-    function isMyHorses(nII) {
-        return nII === connectionID;
+    function isMyHorses(teamName) {
+        return teamName === userTeam;
     }
 
     function cleanUpUserInfo() {
         nUserNum = 0;
-        connectionID = 0;
-        arUserDice = [0];
+        arUserDice = [];
+    }
+
+    function isLoggin() {
+        return userLoggin;
+    }
+
+    function sendServer(data) {
+        if(userLoggin) {
+            ws.send(data);
+        }
     }
 
     function registerServer(id, pw) {
         if(ws.readyState == ws.OPEN) {
-            var registerInfo = {code: "register", connectionId: connectionID, id: id, pw: pw};
+            var registerInfo = {code: "register", id: id, pw: pw};
             var data = JSON.stringify(registerInfo);
             ws.send(data);
         }
@@ -61,26 +55,84 @@
 
     function logginServer(id, pw) {
         if(ws.readyState == ws.OPEN) {
-            var logginInfo = {code: "loggin", connectionId: connectionID, id: id, pw: pw};
+            var logginInfo = {code: "loggin", id: id, pw: pw};
             var data = JSON.stringify(logginInfo);
             ws.send(data);
         }
     }
 
-    function isLoggin() {
-        return userLoggin;
+    function registerTeam(name) {
+        if(ws.readyState == ws.OPEN) {
+            var TeamInfo = {code: "registerTeam", name: name, id: userID};
+            var data = JSON.stringify(TeamInfo);
+            ws.send(data);
+        }
+    }
+
+    function addUserPos(nVar) {
+        if(ws.readyState != ws.OPEN) {
+            alert("서버와 연결이 끊어졌습니다.");
+            return;
+        }
+        
+        if("" == userTeam) {
+            alert("팀에 소속되어야 주사위를 굴릴 수 있습니다.");
+            return;
+        }
+
+        for(var ii = 0; ii < arUserDice.length; ++ii) {
+            if(arUserDice[ii].team == userTeam) {                
+                arUserDice[ii].dice += nVar;
+
+                var DiceLimit = gameRule.getTotalGameBoard();
+                while(arUserDice[ii].dice >= DiceLimit)
+                arUserDice[ii].dice -= DiceLimit;
+
+                var diceInfo = {code: "dice", id: userID, team: userTeam, dice: arUserDice[ii].dice};
+                var data = JSON.stringify(diceInfo);
+                sendServer(data);
+            }
+        }
+    }
+
+    function getTotalInfo() {
+        if(ws.readyState == ws.OPEN) {
+            var totalInfo = {code: "totalInfo"};
+            var data = JSON.stringify(totalInfo);
+            ws.send(data);
+        }
     }
 
     function logginOper(data) {
         userID = data.id;
-        arUserDice = data.dice;
         userLoggin = true;
         document.getElementById("my_name").style.display = "none";
         document.getElementById("my_password").style.display = "none";
         document.getElementById("my_loggin").style.display = "none";
+        document.getElementById("game_goto_main").style.display = "none";
         var logginInfo = document.getElementById("userInfo");
         logginInfo.style.display = "block";
         logginInfo.innerText = "반갑습니다. " + userID + " 님";
+        document.getElementById("dice").style.display = "block";
+        document.getElementById("info").style.display = "block";
+        if("" != data.team) {
+            var teamInfo = document.getElementById("team");
+            teamInfo.style.display = "block";
+            teamInfo.innerText = data.team;
+            userTeam = data.team;
+        }else {
+            document.getElementById("my_teamname").style.display = "block";
+            document.getElementById("my_teamregist").style.display = "block";
+        }
+    }
+
+    function teamOper(data) {
+        document.getElementById("my_teamname").style.display = "none";
+        document.getElementById("my_teamregist").style.display = "none";
+        var teamInfo = document.getElementById("team");
+        teamInfo.style.display = "block";
+        teamInfo.innerText = data.name;
+        userTeam = data.team;
     }
 
     function connectServer() {
@@ -88,7 +140,7 @@
         ws = new WebSocket("ws://175.195.84.133:8100");
 
         ws.onopen = function(e){
-            //alert("connect server");
+            alert("connect server");
         };
 
         ws.onmessage = function(e){
@@ -105,21 +157,47 @@
             if("loggin" == data.code) {
                 logginOper(data);
             }else if("connect" == data.code) {
-                connectionID = data.id;
                 nUserNum = data.userNum;
-                // alert(connectionID + ", " + nUserNum);
                 document.getElementById("info").innerHTML = nUserNum;
             }else if("userNum" == data.code) {
                 nUserNum = data.userNum;
-                arUserDice = data.dice;
-                connectionID = data.id;
-                if(nUserNum != arUserDice.length)
-                    alert("dice error");
                 document.getElementById("info").innerHTML = data.userNum;
             }else if("dice" == data.code) {
-                connectionID = data.id;
                 arUserDice = data.dice;
                 //alert("dice update : " + arUserDice);
+            }else if("register" == data.code) {
+                if(data.result) {
+                    alert("가입 성공");
+                }else {
+                    alert("가입 실패");
+                }
+            }else if("registerTeam" == data.code) {
+                if(data.result) {
+                    alert("팀 생성 성공");
+                    teamOper(data);
+                }else {
+                    alert("팀 생성 실패");
+                }
+            }else if("totalInfo" == data.code) {
+                strVar = "<ul>";
+                data.teams.forEach(function(team) {
+                    strVar = strVar + "<li>TEAM : " + team._id + " dice : " + team.dice + " score : " + team.score;
+                    data.users.forEach(function(user) {
+                        if(user.team == team._id) {
+                            strVar = strVar + "<li>USER : " + user._id + " team : " + user.team;
+                        }
+                    });
+                });
+                strVar = strVar + "<li>";
+                data.users.forEach(function(user) {
+                    if("" == user.team) {
+                        strVar = strVar + "<li>USER : " + user._id + " team : " + user.team;
+                    }
+                });
+                strVar = strVar + "</ul>";
+                var scroeInfo = document.getElementById("score");
+                scroeInfo.style.display = "block";
+                scroeInfo.innerHTML = strVar;
             }
 
             webglMain.drawScene();
@@ -140,17 +218,19 @@
 
     function closeServer() {
         if(ws.readyState == ws.OPEN) {
-            var connectionInfo = {code: "close", id: connectionID};
+            var connectionInfo = {code: "close"};
             var data = JSON.stringify(connectionInfo);
-            ws.send(data);
+            sendServer(data);
             ws.close();
         }
     }
 
     return {
         isLoggin,
+        getTotalInfo: getTotalInfo,
         registerServer: registerServer,
         logginServer: logginServer,
+        registerTeam: registerTeam,
         getUserNum: getUserNum,
         addUserPos: addUserPos,
         getUserDice: getUserDice,

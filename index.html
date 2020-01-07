@@ -29,8 +29,7 @@
 				<!-- <li><button name="game_screen" onClick="location.href='game_main.html'">Start</button> -->
 				<li><button name="game-screen">Start</button>
 				<li><button name="game-register">Register</button>
-				<li><button name="about">about</button>
-				<li><button name="exit-screen">Exit</button>
+				<li><button name="game-score">Score</button>
 			</ul>
 		</div>
 		<div class="screen" id="game-screen">
@@ -38,9 +37,13 @@
 				<input type="text" id="my_name" value="id" size="20">
 				<input type="password" id="my_password" value="pw" size="20">
 				<input type="button" id="my_loggin" value="로그인" onclick="UserLoggin()">
+				<input type="button" id="game_goto_main" value="MAIN" onclick="gotoMain()">
 				<div id="userInfo" style="display:none"></div>
-				<div id="dice">주사위</div>
-				<div id="info">0</div>
+				<div id="dice" style="display:none">주사위</div>
+				<div id="info" style="display:none">0</div>
+				<div id="team" style="display:none">팀</div>
+				<input type="text" id="my_teamname" value="teamname" size="20" style="display:none">
+				<input type="button" id="my_teamregist" value="팀생성/가입" style="display:none" onclick="registTeam()">
 			</div>
 			<canvas id="canvas"></canvas>
 		</div>
@@ -48,7 +51,10 @@
 			ID : <input type="text" id="register_name" value="id" size="20">
 			PW : <input type="password" id="register_password" value="pw" size="20">
 			<input type="button" id="register_user" value="가입하기" onclick="RegisterUser()">
-			<input type="button" id="goto_main" value="MAIN" onclick="gotoMain()">
+			<input type="button" id="register_goto_main" value="MAIN" onclick="gotoMain()">
+		</div>
+		<div class="screen" id="game-score">
+			<div id="score"></div>
 		</div>
 	</div>
 </body>
@@ -69,7 +75,6 @@ var gl = canvas.getContext("webgl");
 // init webgl
 webglMain.drawInit(gl);
 
-// event handler
 window.onkeydown = function() {
 	if(event.keyCode == 37) { // left
 		webglMain.AddCameraAngle(-10);
@@ -102,6 +107,11 @@ dicediv.addEventListener('click', function (event) {
 	gameUser.addUserPos(result);
 	webglMain.drawScene();
 });
+
+function registTeam() {
+	var teamname = document.getElementById("my_teamname").value;
+	gameUser.registerTeam(teamname);
+}
 
 function UserLoggin() {
 	var id = document.getElementById("my_name").value;

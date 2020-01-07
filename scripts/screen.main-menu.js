@@ -63,3 +63,24 @@ jewel.screens["game-register"] = (function() {
 		run: run
 	};
 })();
+
+jewel.screens["game-score"] = (function() {
+	var dom = jewel.dom,
+		game = jewel.game;
+		firstRunScore = true;
+		
+	function setup(){
+		gameUser.getTotalInfo();
+	}
+	
+	function run(){
+		if(firstRunScore){
+			setup();
+			firstRunScore = false;
+		}
+	}
+
+	return{
+		run: run
+	};
+})();

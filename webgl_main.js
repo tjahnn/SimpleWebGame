@@ -283,9 +283,9 @@
 
         // draw game horses
         for(var ii = 0; ii < gameUser.getUserNum(); ++ii) {
-            var isMy = gameUser.isMyHorses(ii);
-            var UserDice = gameUser.getUserDice(ii);
-            var userPos = gameRule.getUserPosition(UserDice);
+            var teamDice = gameUser.getUserDice(ii);
+            var isMy = gameUser.isMyHorses(teamDice.team);
+            var userPos = gameRule.getUserPosition(teamDice.dice);
             drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1], isMy);
         }
     }

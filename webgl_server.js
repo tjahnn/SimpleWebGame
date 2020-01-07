@@ -1,6 +1,12 @@
 var WebSocketServer = require("ws").Server;
 var WebServerIp = require("public-ip");
-var mongo = require("mongodb");
+var MongoClient = require("mongodb").MongoClient;
+
+//mongodb configs
+var connectionUrl = "mongodb://localhost:27017/",
+    cadDB = "CadDB",
+    userCollection = "Users", // id(key), pw, team
+    teamCollection = "Teams"; // id(key), dice, score
 
 var public_ip;
 var server_port = 8100;
@@ -8,13 +14,12 @@ var server_port = 8100;
     public_ip = await WebServerIp.v4();
     console.log("server open ip : " + public_ip + ", port : " + server_port);
 })();
+
 // var wss = new WebSocketServer({port:8100});
 var wss = new WebSocketServer({address:String(public_ip), port:server_port});
 
 // user info
-var RegiseterInfo = [];
-var UserInfo = [];
-var diceList = [];
+var UserInfo = []; // { ws, id, team }
 
 // function
 function displayUserInfo() {
@@ -23,54 +28,59 @@ function displayUserInfo() {
         console.log(ii + " [" +
         + UserInfo[ii].userWS.readyState + ", "
         + UserInfo[ii].id + ", "
-        + UserInfo[ii].pw + "]");
+        + UserInfo[ii].team + "]");
     }
-    console.log("diceList[" + diceList + "]");
+}
+
+function getUserInfo(ws) {
+    var retVar;
+    for(var ii = 0; ii < UserInfo.length; ++ii) {
+        if(UserInfo[ii].userWS == ws) {
+            retVar = UserInfo[ii];
+        }
+    }
+    return retVar;
+}
+
+function getUserIndex(ws) {
+    var retVar;
+    for(var ii = 0; ii < UserInfo.length; ++ii) {
+        if(UserInfo[ii].userWS == ws) {
+            retVar = ii;
+        }
+    }
+    return retVar;
 }
 
 function initUserInfo(ws) {
-    UserInfo.push({userWS: ws, id: "", pw: ""});
-    diceList.push(0);
+    UserInfo.push({userWS: ws, id: "", team: ""});
     displayUserInfo();
-
-    if(UserInfo.length != diceList.length) {
-        console.log("invalid UserInfo and diceList");
-        return -1;
-    }
-    return UserInfo.length;
 }
 
 function delUserInfo(nUserIndex) {
     UserInfo.splice(nUserIndex, 1);
-    diceList.splice(nUserIndex, 1);
 }
 
-function isConnect(ii) {
-    if(UserInfo.length <= ii) {
-        console.log("invalid isConnect User Index : " + ii);
-        return false;
-    }
-    return UserInfo[ii].userWS.readyState === UserInfo[ii].userWS.OPEN;
+function isConnect(ws) {
+    return ws.readyState === ws.OPEN;
 }
 
-function sendUser(ii, data) {
-    if(isConnect(ii)) {
-        UserInfo[ii].userWS.send(data);
+function sendUser(ws, data) {
+    if(isConnect(ws)) {
+        ws.send(data);
     }
 }
 
-function sendConnectInfo(nUserSize) {
-    if(-1 == nUserSize) return;
-
-    var connectionInfo = {code: "connect", id: nUserSize - 1, userNum: nUserSize};
+function sendConnectInfo(ws) {
+    var connectionInfo = {code: "connect", userNum: UserInfo.length};
     var data = JSON.stringify(connectionInfo);
-    sendUser(connectionInfo.id, data);
+    sendUser(ws, data);
 }
 
 function refreshUserInfo() {
     // check user open
     for(var ii = 0; ii < UserInfo.length; ++ii) {
-        if(!isConnect(ii)) {
+        if(!isConnect(UserInfo[ii].userWS)) {
             delUserInfo(ii);
             --ii;
         }
@@ -87,82 +97,294 @@ function UpdateUserInfo() {
     // send userNum
     for(var ii = 0; ii < UserInfo.length; ++ii) {
         // console.log(connectionList[ii].readyState);
-        if(isConnect(ii)) {
-            var connectionInfo = {code: "userNum", id: ii, userNum: UserInfo.length, dice: diceList};
+        if(isConnect(UserInfo[ii].userWS)) {
+            var connectionInfo = {code: "userNum", userNum: UserInfo.length};
             var data = JSON.stringify(connectionInfo);
-            sendUser(ii, data);
+            sendUser(UserInfo[ii].userWS, data);
         }else{
             delUserInfo(ii);
             --ii;
         }
     }
+
+    getTeamDice();
 }
 
-function UpdateUserDice(nUserIndex, nUserVar) {
-    if(isConnect(nUserIndex)) {
-        diceList[nUserIndex] = nUserVar;
-    }
-
-    // notice User Dice
-    console.log("send User Dice");
-    for(var ii = 0; ii < UserInfo.length; ++ii) {
-        // console.log(connectionList[ii].readyState);
-        if(isConnect(ii)) {
-            var diceInfo = {code: "dice", id: ii, dice: diceList};
-            var data = JSON.stringify(diceInfo);
-            console.log(data);
-            sendUser(ii, data);
-        }else{
-            delUserInfo(ii);
-            --ii;
+function UpdateUserDice(ws, id, team, nUserVar) {
+    if(isConnect(ws)) {
+        // update dice
+        var curUser = getUserInfo(ws);
+        if(curUser.id == id && curUser.team == team) {
+            MongoClient.connect(connectionUrl, function(err, client) {
+                console.log("Connected correctly to DB server");
+            
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+        
+                updateKey = {_id: team};
+                updateVar = { $set: { dice: nUserVar } };
+        
+                var MongoDb = client.db(cadDB)
+                var collec = MongoDb.collection(teamCollection);
+                collec.updateOne(updateKey, updateVar, function(error,result){
+                    //here result will contain an array of records inserted
+                    if(!error) {
+                        console.log("Success : teamCollection dice update!");
+                    } else {
+                        console.log("teamCollection dice Some error was encountered!");
+                    }
+                });
+            
+                client.close()
+            });
         }
     }
+
+    getTeamDice();
 }
 
 function RegisterUser(nUserIndex, Userid, Userpw) {
     if(!isConnect(nUserIndex)) return;
 
-    RegiseterInfo.push({id: Userid, pw: Userpw})
+    // add register user info
+    MongoClient.connect(connectionUrl, function(err, client) {
+        console.log("Connected correctly to DB server");
+    
+        if (err) {
+            console.log("err");
+            return;
+        }
 
-    for(var ii = 0; ii < RegiseterInfo.length; ++ii) {
-        console.log(ii + " [" +
-        + RegiseterInfo[ii].id + ", "
-        + RegiseterInfo[ii].pw + "]");
-    }
+        // Insert Data
+        data = {
+            _id: Userid,
+            pw: Userpw,
+            team: ""
+        };
+    
+        // Get some collection
+        var MongoDb = client.db(cadDB)
+        var collec = MongoDb.collection(userCollection);
+        collec.insertOne(data,function(error,result){
+            //here result will contain an array of records inserted
+            var registerInfo;
+            if(!error) {
+                console.log("Success :"+result.ops.length+" UserCollection inserted!");
+                registerInfo = {code: "register", result: true};
+            } else {
+                console.log("UserCollection Some error was encountered!");
+                registerInfo = {code: "register", result: false};
+            }
+            var data = JSON.stringify(registerInfo);
+            sendUser(nUserIndex, data);
+        });
+    
+        client.close()
+    });
 }
 
-function isRegisterUser(id, pw) {
+function isRegisterUser(ws, userId, userPw) {
     var bRet = false;
-    for(var ii = 0; ii < RegiseterInfo.length; ++ii) {
-        if(RegiseterInfo[ii].id == id && RegiseterInfo[ii].pw == pw) {
-            bRet = true;
-            break;
+
+    // add register user info
+    MongoClient.connect(connectionUrl, function(err, client) {
+        console.log("Connected correctly to DB server");
+    
+        if (err) {
+            console.log(err);
+            return;
         }
-    }
+
+        // Get some collection
+        var MongoDb = client.db(cadDB)
+        var collec = MongoDb.collection(userCollection);
+        var query = { _id:  userId};
+        collec.find(query).toArray(function(err, result) {
+            if (err) {
+                console.log(err);
+                return;
+            }
+            if(1 != result.length) return;
+
+            console.log(result);
+            if(result[0]._id == userId && result[0].pw == userPw) {
+                if(isConnect(ws)) {
+                    console.log("send user loggin");
+                    // check loggin db
+                    UserInfo[getUserIndex(ws)].id = result[0]._id;
+                    UserInfo[getUserIndex(ws)].team = result[0].team;
+        
+                    // display user info
+                    displayUserInfo();
+        
+                    // send user loggin
+                    var logginInfo = {code: "loggin", id: result[0]._id, team: result[0].team};
+                    var data = JSON.stringify(logginInfo);
+                    sendUser(ws, data);
+
+                    getTeamDice();
+                }
+                bRet = true;
+            }
+        });
+    
+        client.close()
+    });
 
     return bRet;
 }
 
-function CheckUserLoggin(nUserIndex, id, pw) {
-    if(isConnect(nUserIndex)) {
-        if(isRegisterUser(id, pw)) {
-            // check loggin db
-            UserInfo[nUserIndex].id = id;
-            UserInfo[nUserIndex].pw = pw;
-
-            // display user info
-            displayUserInfo();
-
-            // send user loggin
-            var logginInfo = {code: "loggin", id: id, dice: diceList};
-            var data = JSON.stringify(logginInfo);
-            sendUser(nUserIndex, data);
-        }else {
-            console.log("not user info : id(" + id + "), pw(" + pw + ")");
+function RegisterTeam(ii, teamName, userId) {
+    // add register user info
+    MongoClient.connect(connectionUrl, function(err, client) {
+        console.log("Connected correctly to DB server");
+    
+        if (err) {
+            console.log(err);
+            return;
         }
-    }else {
-        console.log("connected loss " + nUserIndex);
+
+        // Insert Data
+        data = {
+            _id: teamName,
+            dice: 0,
+            score: 0
+        };
+    
+        // Get some collection
+        var MongoDb = client.db(cadDB)
+        var teamcollec = MongoDb.collection(teamCollection);
+        teamcollec.insertOne(data,function(error,result){
+            //here result will contain an array of records inserted
+            if(!error) {
+                console.log("Success :"+result.ops.length+" teamCollection inserted!");
+            } else {
+                console.log("teamCollection Some error was encountered!");
+            }
+        });
+
+        updateKey = {_id: userId};
+        updateVar = { $set: { team: teamName } };
+
+        var usercollec = MongoDb.collection(userCollection);
+        usercollec.updateOne(updateKey, updateVar, function(error,result){
+            //here result will contain an array of records inserted
+            var registerInfo;
+            if(!error) {
+                console.log("Success : UserCollection update!");
+                registerInfo = {code: "registerTeam", result: true, name: teamName};
+            } else {
+                console.log("UserCollection Some error was encountered!");
+                registerInfo = {code: "registerTeam", result: false, name: teamName};
+            }
+            var data = JSON.stringify(registerInfo);
+            sendUser(ii, data);
+        });
+    
+        client.close()
+    });
+}
+
+function AddTeamUser(teamName, UserId) {
+
+}
+
+function getTeamDice() {
+    // add register user info
+    MongoClient.connect(connectionUrl, function(err, client) {
+        console.log("Connected correctly to DB server");
+    
+        if (err) {
+            console.log(err);
+            return;
+        }
+
+        // Get some collection
+        var MongoDb = client.db(cadDB)
+        var collec = MongoDb.collection(teamCollection);
+        collec.find().toArray(function(err, result) {
+            if (err) {
+                console.log(err);
+                return;
+            }
+
+            var arRet = [];
+            for(var ii = 0; ii < result.length; ++ii ) {
+                arRet.push({team: result[ii]._id, dice: result[ii].dice});
+            }
+            console.log(arRet);
+
+            // notice User Dice
+            console.log("send User Dice");
+            for(var ii = 0; ii < UserInfo.length; ++ii) {
+                // console.log(connectionList[ii].readyState);
+                if(isConnect(UserInfo[ii].userWS)) {
+                    var diceInfo = {code: "dice", dice: arRet};
+                    var data = JSON.stringify(diceInfo);
+                    sendUser(UserInfo[ii].userWS, data);
+                }else{
+                    delUserInfo(ii);
+                    --ii;
+                }
+            }
+        });
+    
+        client.close()
+    });
+}
+
+function getTotalInfo(ws) {
+    if(!isConnect(ws)) {
+        return;
     }
+
+    // add register user info
+    MongoClient.connect(connectionUrl, function(err, client) {
+        console.log("Connected correctly to DB server : getTotalInfo");
+    
+        if (err) {
+            console.log(err);
+            return;
+        }
+
+        var restInfo = []
+
+        // Get User Info
+        var MongoDb = client.db(cadDB)
+        var collecUser = MongoDb.collection(userCollection);
+
+        var totalUsers = [];
+        (async()=>{
+            var proUsers = await collecUser.find().toArray();
+            console.log("totalInfo User");
+            proUsers.forEach(function(user) {
+                totalUsers.push(user);
+            });
+        })();
+
+        // Get Team Info
+        var collecTeam = MongoDb.collection(teamCollection);
+
+        var totalTeam = [];
+        (async()=>{
+            var proTeams = await collecTeam.find().toArray();
+            console.log("totalInfo Team");
+            proTeams.forEach(function(team) {
+                totalTeam.push(team);
+            });
+
+            console.log("Send to totalInfo");
+            var totalInfo = {code: "totalInfo", users: totalUsers, teams: totalTeam};
+            console.log(totalInfo.users);
+            console.log(totalInfo.teams);
+            var data = JSON.stringify(totalInfo);
+            sendUser(ws, data);
+        })();
+    
+        client.close()
+    });
 }
 
 wss.on("connection", function(ws, request) {
@@ -183,16 +405,20 @@ wss.on("connection", function(ws, request) {
 
         // console.log("data[" + data + "]");
         if("register" == data.code) {
-            RegisterUser(data.connectionId, data.id, data.pw)
+            RegisterUser(ws, data.id, data.pw)
         }else if("loggin" == data.code) {
-            CheckUserLoggin(data.connectionId, data.id, data.pw);
+            isRegisterUser(ws, data.id, data.pw);
             UpdateUserInfo();
         }else if("close" == data.code) {
-            delUserInfo(data.id);
+            delUserInfo(ws);
             displayUserInfo();
             UpdateUserInfo();
         }else if("dice" == data.code) {
-            UpdateUserDice(data.id, data.dice);
+            UpdateUserDice(ws, data.id, data.team, data.dice);
+        }else if("registerTeam" == data.code) {
+            RegisterTeam(ws, data.name, data.id);
+        }else if("totalInfo" == data.code) {
+            getTotalInfo(ws);
         }
         console.log();
     });
@@ -202,8 +428,8 @@ wss.on("connection", function(ws, request) {
         UpdateUserInfo();
     });
 
-    var nUserSize = initUserInfo(ws);
-    sendConnectInfo(nUserSize);
+    initUserInfo(ws);
+    sendConnectInfo(ws);
     UpdateUserInfo();
 });
 
