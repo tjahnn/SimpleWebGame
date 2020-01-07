@@ -20,6 +20,8 @@ var wss = new WebSocketServer({address:String(public_ip), port:server_port});
 
 // user info
 var UserInfo = []; // { ws, id, team }
+var teamChance = [];
+var managerId = ["phj0319", "atj1126"];
 
 // function
 function displayUserInfo() {
@@ -30,6 +32,33 @@ function displayUserInfo() {
         + UserInfo[ii].id + ", "
         + UserInfo[ii].team + "]");
     }
+    console.log("teamChance");
+    console.log(teamChance);
+}
+
+function applyTeamChance(id, name, chance) {
+    var bIsManager = false;
+    managerId.forEach(function(manId) {
+        if(manId == id) {
+            bIsManager = true;
+        }
+    });
+
+    if(bIsManager) {
+        var bisExist = false;
+        teamChance.forEach(function(teamInfo) {
+            if(teamInfo.team == name) {
+                teamInfo.chance = parseInt(chance);
+                bisExist = true;
+            }
+        });
+
+        if(!bisExist) {
+            teamChance.push({team:name, chance:parseInt(chance)});
+        }
+    }
+    console.log("teamChance");
+    console.log(teamChance);
 }
 
 function getUserInfo(ws) {
@@ -116,13 +145,38 @@ function UpdateUserDice(ws, id, team, nUserVar) {
         var curUser = getUserInfo(ws);
         if(curUser.id == id && curUser.team == team) {
             MongoClient.connect(connectionUrl, function(err, client) {
-                console.log("Connected correctly to DB server");
+                console.log("Connected correctly to DB server : UpdateUserDice");
             
                 if (err) {
                     console.log(err);
                     return;
                 }
-        
+
+                console.log("teamChance before");
+                console.log(teamChance);
+
+                // check chance
+                var nChanceNum = 0;
+                teamChance.forEach(function(teamInfo) {
+                    if(teamInfo.team == team) {
+                        nChanceNum = Number(teamInfo.chance);
+                    }
+                });
+
+                console.log(team + " chance is " + nChanceNum);
+                if(0 >= nChanceNum) {
+                    return;
+                }
+
+                teamChance.forEach(function(teamInfo) {
+                    if(teamInfo.team == team) {
+                        teamInfo.chance = (nChanceNum - 1);
+                    }
+                });
+
+                console.log("teamChance after");
+                console.log(teamChance);
+
                 updateKey = {_id: team};
                 updateVar = { $set: { dice: nUserVar } };
         
@@ -223,6 +277,15 @@ function isRegisterUser(ws, userId, userPw) {
                     var logginInfo = {code: "loggin", id: result[0]._id, team: result[0].team};
                     var data = JSON.stringify(logginInfo);
                     sendUser(ws, data);
+
+                    // check manager
+                    managerId.forEach(function(manId) {
+                        if(manId == result[0]._id) {
+                            var manageInfo = {code: "manager", manager: true};
+                            var data = JSON.stringify(manageInfo);
+                            sendUser(ws, data);
+                        }
+                    });
 
                     getTeamDice();
                 }
@@ -419,6 +482,8 @@ wss.on("connection", function(ws, request) {
             RegisterTeam(ws, data.name, data.id);
         }else if("totalInfo" == data.code) {
             getTotalInfo(ws);
+        }else if("teamDiceChance" == data.code) {
+            applyTeamChance(data.id, data.name, data.chance);
         }
         console.log();
     });

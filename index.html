@@ -44,14 +44,19 @@
 				<div id="team" style="display:none">팀</div>
 				<input type="text" id="my_teamname" value="teamname" size="20" style="display:none">
 				<input type="button" id="my_teamregist" value="팀생성/가입" style="display:none" onclick="registTeam()">
+				<input type="text" id="team_dice_name" value="" size="20" style="display:none">
+				<input type="text" id="team_dice_num" value="" size="20" style="display:none">
+				<input type="button" id="team_dice_apply" value="적용" style="display:none" onclick="applyTeamDiceChance()">
 			</div>
 			<canvas id="canvas"></canvas>
 		</div>
 		<div class="screen" id="game-register">
-			ID : <input type="text" id="register_name" value="id" size="20">
-			PW : <input type="password" id="register_password" value="pw" size="20">
-			<input type="button" id="register_user" value="가입하기" onclick="RegisterUser()">
-			<input type="button" id="register_goto_main" value="MAIN" onclick="gotoMain()">
+			<div style="text-align:center;">
+				ID : <input type="text" id="register_name" value="id" size="20">
+				PW : <input type="password" id="register_password" value="pw" size="20">
+				<input type="button" id="register_user" value="가입하기" onclick="RegisterUser()">
+				<input type="button" id="register_goto_main" value="MAIN" onclick="gotoMain()">
+			</div>
 		</div>
 		<div class="screen" id="game-score">
 			<div id="score"></div>
@@ -105,7 +110,7 @@ var dicediv = document.getElementById("dice");
 dicediv.addEventListener('click', function (event) {
 	var result = ((Math.floor(Math.random() * 10)) % 6) + 1;
 	gameUser.addUserPos(result);
-	webglMain.drawScene();
+	//webglMain.drawScene();
 });
 
 function registTeam() {
@@ -117,6 +122,12 @@ function UserLoggin() {
 	var id = document.getElementById("my_name").value;
 	var pw = document.getElementById("my_password").value;
 	gameUser.logginServer(id, pw);
+}
+
+function applyTeamDiceChance() {
+	var teamName = document.getElementById("team_dice_name").value;
+	var teamNum = document.getElementById("team_dice_num").value;
+	gameUser.applyTeamDiceChance(teamName, teamNum);
 }
 
 function RegisterUser() {

@@ -15,6 +15,7 @@
     var userLoggin = false;
     var userTeam = "";
     var arUserDice = [];
+    var bIsManager = false;
 
     function getTeamNum() {
         return arUserDice.length;
@@ -69,6 +70,14 @@
         }
     }
 
+    function applyTeamDiceChance(teamName, teamDiceNum) {
+        if(ws.readyState == ws.OPEN) {
+            var ChanceInfo = {code: "teamDiceChance", id: userID, name: teamName, chance: teamDiceNum};
+            var data = JSON.stringify(ChanceInfo);
+            ws.send(data);
+        }
+    }
+
     function addUserPos(nVar) {
         if(ws.readyState != ws.OPEN) {
             alert("서버와 연결이 끊어졌습니다.");
@@ -85,8 +94,9 @@
                 arUserDice[ii].dice += nVar;
 
                 var DiceLimit = gameRule.getTotalGameBoard();
-                while(arUserDice[ii].dice >= DiceLimit)
-                arUserDice[ii].dice -= DiceLimit;
+                while(arUserDice[ii].dice >= DiceLimit) {
+                    arUserDice[ii].dice -= DiceLimit;
+                }
 
                 var diceInfo = {code: "dice", id: userID, team: userTeam, dice: arUserDice[ii].dice};
                 var data = JSON.stringify(diceInfo);
@@ -198,6 +208,11 @@
                 var scroeInfo = document.getElementById("score");
                 scroeInfo.style.display = "block";
                 scroeInfo.innerHTML = strVar;
+            }else if("manager" == data.code) {
+                bIsManager = data.manager;
+                document.getElementById("team_dice_name").style.display = "block";
+                document.getElementById("team_dice_num").style.display = "block";
+                document.getElementById("team_dice_apply").style.display = "block";
             }
 
             webglMain.drawScene();
@@ -230,6 +245,7 @@
         getTotalInfo: getTotalInfo,
         registerServer: registerServer,
         logginServer: logginServer,
+        applyTeamDiceChance: applyTeamDiceChance,
         registerTeam: registerTeam,
         getTeamNum: getTeamNum,
         addUserPos: addUserPos,
