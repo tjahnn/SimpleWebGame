@@ -162,31 +162,25 @@
         var numFsX = gameRule.nGameSideBoard;
         var numFsY = gameRule.nGameSideBoard;
         var nOffset = webglfigure.nDefaultBoardGap;
-        for (var ix = -(numFsX * 0.5); ix < (numFsX * 0.5); ++ix) {
-            for (var iy = -(numFsY * 0.5); iy < (numFsY * 0.5); ++iy) {
+        for (var ix = 0; ix < numFsX; ++ix) {
+            for (var iy = 0; iy < numFsY; ++iy) {
+                var offx = ix - (numFsX * 0.5);
+                var offy = iy - (numFsY * 0.5);
                 // starting with the view projection matrix
                 // compute a matrix for the F
-                var matrix = webglm4.translate(viewProjectionMatrix, nOffset * ix, 0, nOffset * iy);
-                var colorBack = (ix + iy);
-                if(0 == (colorBack % 2)) {
-                    matrix = webglm4.xRotate(matrix, Math.PI);
-                }
+                var matrix = webglm4.translate(viewProjectionMatrix, nOffset * offy, 0, nOffset * offx);
+                //var colorBack = (offx + offy);
+                //if(0 == (colorBack % 2)) {
+                //   matrix = webglm4.xRotate(matrix, Math.PI);
+                //}
                 
                 // Set the matrix.
                 gl.uniformMatrix4fv(matrixLocation, false, matrix);
 
                 // Set color
-                if(ix == -(numFsX * 0.5)) {
-                    gl.uniform4fv(colorLocation, [1, 0, 0, 1]);
-                }else if(ix == (numFsX * 0.5) - 1) {
-                    gl.uniform4fv(colorLocation, [0, 1, 0, 1]);
-                }else if(iy == -(numFsY * 0.5)) {
-                    gl.uniform4fv(colorLocation, [0, 0, 1, 1]);
-                }else if(iy == (numFsY * 0.5) - 1) {
-                    gl.uniform4fv(colorLocation, [1, 1, 0, 1]);
-                }else {
-                    gl.uniform4fv(colorLocation, [0.5, 0.5, 0.5, 1]); // mid
-                }
+                var nScore = gameRule.getScore(ix, iy);
+                var BlockColor = gameRule.getColor(nScore);
+                gl.uniform4fv(colorLocation, BlockColor);
     
                 // Draw the geometry.
                 var primitiveType = gl.TRIANGLES;
@@ -304,9 +298,9 @@
             var userPos = gameRule.getUserPosition(teamDice.dice);
             var vecColor;
             if(isMy) {
-                vecColor = [0.5, 0.5, 0, 1];
+                vecColor = [0, 1, 0, 1];
             }else {
-                vecColor = [0.5, 0, 0.5, 1];
+                vecColor = [0, 0, 1, 1];
             }
             drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1], vecColor, isMy);
         }

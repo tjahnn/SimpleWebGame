@@ -23,6 +23,20 @@
     */
     var nGameSideBoard = 10;
     var nTotalGameBoard = (nGameSideBoard * 2) + ((nGameSideBoard - 2) * 2);
+    var nScoreGameBoard = [5,1,5,1,2,1,2,1,2,5, // 1
+                           1,0,0,0,0,0,0,0,0,5, // 2                
+                           5,0,0,0,0,0,0,0,0,1, // 3
+                           2,0,0,0,0,0,0,0,0,2, // 4
+                           1,0,0,0,0,0,0,0,0,5, // 5
+                           1,0,0,0,0,0,0,0,0,1, // 6
+                           2,0,0,0,0,0,0,0,0,2, // 7
+                           5,0,0,0,0,0,0,0,0,5, // 8
+                           1,0,0,0,0,0,0,0,0,1, // 9
+                           1,2,1,2,5,2,5,1,5,1];// 10
+    var nScoreGamePos = [1,1,5,2,1,5,2,1,5,5,
+                         2,1,2,1,2,1,5,1,5,1,
+                         5,2,1,1,2,5,1,1,2,1,
+                         2,5,2,5,1,5]; // 36
     var nGameEndPoint = [0, nTotalGameBoard - 1];
     var nGameTerningPoint = [
             0,
@@ -30,6 +44,36 @@
             (nGameSideBoard - 1) * 2, 
             (nGameSideBoard - 1) * 3];
 
+    // score
+    function getScoreByPos(nPos) {
+        if(nScoreGamePos.length <= nPos) {
+            return 0;
+        }
+        return nScoreGamePos[nPos];
+    }
+
+    function getScore(x, y) {
+        var nIndex = (x * nGameSideBoard) + y;
+        if(nScoreGameBoard.length <= nIndex) {
+            return 0;
+        }
+
+        return nScoreGameBoard[nIndex];
+    }
+
+    function getColor(nScore) {
+        if(5 == nScore) {
+            return [1,1,0,1];   // yellow
+        }else if(2 == nScore) {
+            return [1,0.07,0.57,1]; // pink
+        }else if(1 == nScore) {
+            return [0,1,1,1];   //cyan
+        }else {
+            return [0,0.5,0,1];   // lime
+        }
+    }
+
+    // move horses
     function getPrevTerningPoint(nPos) {
         var nTPIndex = 0;
         var nGap = 0;
@@ -70,6 +114,9 @@
     }
     
     return {
+        getScoreByPos: getScoreByPos,
+        getScore: getScore,
+        getColor: getColor,
         getTotalGameBoard: getTotalGameBoard,
         nGameSideBoard: nGameSideBoard,
         getUserPosition: getUserPosition,

@@ -139,7 +139,7 @@ function UpdateUserInfo() {
     getTeamDice();
 }
 
-function UpdateUserDice(ws, id, team, nUserVar) {
+function UpdateUserDice(ws, id, team, nUserVar, score) {
     if(isConnect(ws)) {
         // update dice
         var curUser = getUserInfo(ws);
@@ -178,11 +178,11 @@ function UpdateUserDice(ws, id, team, nUserVar) {
                 console.log(teamChance);
 
                 updateKey = {_id: team};
-                updateVar = { $set: { dice: nUserVar } };
+                updateVar = { $set: { dice: nUserVar }, $inc: { score: score } };
         
                 var MongoDb = client.db(cadDB)
                 var collec = MongoDb.collection(teamCollection);
-                collec.updateOne(updateKey, updateVar, function(error,result){
+                collec.updateMany(updateKey, updateVar, function(error,result){
                     //here result will contain an array of records inserted
                     if(!error) {
                         console.log("Success : teamCollection dice update!");
@@ -375,7 +375,7 @@ function getTeamDice() {
 
             var arRet = [];
             for(var ii = 0; ii < result.length; ++ii ) {
-                arRet.push({team: result[ii]._id, dice: result[ii].dice});
+                arRet.push({team: result[ii]._id, dice: result[ii].dice, score: result[ii].score});
             }
             console.log(arRet);
 
@@ -477,7 +477,7 @@ wss.on("connection", function(ws, request) {
             displayUserInfo();
             UpdateUserInfo();
         }else if("dice" == data.code) {
-            UpdateUserDice(ws, data.id, data.team, data.dice);
+            UpdateUserDice(ws, data.id, data.team, data.dice, data.score);
         }else if("registerTeam" == data.code) {
             RegisterTeam(ws, data.name, data.id);
         }else if("totalInfo" == data.code) {

@@ -14,6 +14,7 @@
     var userID = "";
     var userLoggin = false;
     var userTeam = "";
+    var userTeamScore = 0;
     var arUserDice = [];
     var bIsManager = false;
 
@@ -98,7 +99,10 @@
                     arUserDice[ii].dice -= DiceLimit;
                 }
 
-                var diceInfo = {code: "dice", id: userID, team: userTeam, dice: arUserDice[ii].dice};
+                var score = gameRule.getScoreByPos(arUserDice[ii].dice);
+                //alert(nVar + ", " + score);
+
+                var diceInfo = {code: "dice", id: userID, team: userTeam, dice: arUserDice[ii].dice, score:score};
                 var data = JSON.stringify(diceInfo);
                 sendServer(data);
             }
@@ -124,12 +128,16 @@
         logginInfo.style.display = "block";
         logginInfo.innerText = "반갑습니다. " + userID + " 님";
         document.getElementById("dice").style.display = "block";
-        document.getElementById("info").style.display = "block";
         if("" != data.team) {
             var teamInfo = document.getElementById("team");
             teamInfo.style.display = "block";
             teamInfo.innerText = data.team;
             userTeam = data.team;
+
+            var teamScore = document.getElementById("team_score");
+            teamScore.style.display = "block";
+            teamScore.innerText = "0";
+            userTeamScore = 0;
         }else {
             document.getElementById("my_teamname").style.display = "block";
             document.getElementById("my_teamregist").style.display = "block";
@@ -168,12 +176,18 @@
                 logginOper(data);
             }else if("connect" == data.code) {
                 nUserNum = data.userNum;
-                document.getElementById("info").innerHTML = nUserNum;
+                //document.getElementById("info").innerHTML = nUserNum;
             }else if("userNum" == data.code) {
                 nUserNum = data.userNum;
-                document.getElementById("info").innerHTML = data.userNum;
+                //document.getElementById("info").innerHTML = data.userNum;
             }else if("dice" == data.code) {
                 arUserDice = data.dice;
+                arUserDice.forEach(function(teamInfo) {
+                    if(userTeam == teamInfo.team) {
+                        userTeamScore = teamInfo.score;
+                        document.getElementById("team_score").innerText = userTeamScore;
+                    }
+                });
                 //alert("dice update : " + arUserDice);
             }else if("register" == data.code) {
                 if(data.result) {
