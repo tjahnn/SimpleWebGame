@@ -16,8 +16,8 @@
     var userTeam = "";
     var arUserDice = [];
 
-    function getUserNum() {
-        return nUserNum;
+    function getTeamNum() {
+        return arUserDice.length;
     }
 
     function getUserDice(nUserIndex) {
@@ -231,7 +231,7 @@
         registerServer: registerServer,
         logginServer: logginServer,
         registerTeam: registerTeam,
-        getUserNum: getUserNum,
+        getTeamNum: getTeamNum,
         addUserPos: addUserPos,
         getUserDice: getUserDice,
         isMyHorses: isMyHorses,

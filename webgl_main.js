@@ -282,7 +282,7 @@
         drawGameBoard(viewProjectionMatrix);
 
         // draw game horses
-        for(var ii = 0; ii < gameUser.getUserNum(); ++ii) {
+        for(var ii = 0; ii < gameUser.getTeamNum(); ++ii) {
             var teamDice = gameUser.getUserDice(ii);
             var isMy = gameUser.isMyHorses(teamDice.team);
             var userPos = gameRule.getUserPosition(teamDice.dice);
