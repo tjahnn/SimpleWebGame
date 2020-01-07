@@ -35,9 +35,9 @@
 
         // look up where the vertex data needs to go.
         positionLocation = gl.getAttribLocation(program, "a_position");
-        colorLocation = gl.getAttribLocation(program, "a_color");
 
         // lookup uniforms
+        colorLocation = gl.getUniformLocation(program, "u_color");
         matrixLocation = gl.getUniformLocation(program, "u_matrix");
 
         // Create a buffer to put positions in
@@ -144,19 +144,19 @@
             positionLocation, size, type, normalize, stride, offset);
         
         // Turn on the color attribute
-        gl.enableVertexAttribArray(colorLocation);
+        //gl.enableVertexAttribArray(colorLocation);
         
         // Bind the color buffer.
-        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
         
         // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
-        var size = 3;                 // 3 components per iteration
-        var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
-        var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
-        var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
-        var offset = 0;               // start at the beginning of the buffer
-        gl.vertexAttribPointer(
-            colorLocation, size, type, normalize, stride, offset);
+        //var size = 3;                 // 3 components per iteration
+        //var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
+        //var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
+        //var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+        //var offset = 0;               // start at the beginning of the buffer
+        //gl.vertexAttribPointer(
+        //    colorLocation, size, type, normalize, stride, offset);
 
         // draw game board
         var numFsX = gameRule.nGameSideBoard;
@@ -174,6 +174,19 @@
                 
                 // Set the matrix.
                 gl.uniformMatrix4fv(matrixLocation, false, matrix);
+
+                // Set color
+                if(ix == -(numFsX * 0.5)) {
+                    gl.uniform4fv(colorLocation, [1, 0, 0, 1]);
+                }else if(ix == (numFsX * 0.5) - 1) {
+                    gl.uniform4fv(colorLocation, [0, 1, 0, 1]);
+                }else if(iy == -(numFsY * 0.5)) {
+                    gl.uniform4fv(colorLocation, [0, 0, 1, 1]);
+                }else if(iy == (numFsY * 0.5) - 1) {
+                    gl.uniform4fv(colorLocation, [1, 1, 0, 1]);
+                }else {
+                    gl.uniform4fv(colorLocation, [0.5, 0.5, 0.5, 1]);
+                }
     
                 // Draw the geometry.
                 var primitiveType = gl.TRIANGLES;
@@ -184,7 +197,7 @@
         }
     }
 
-    function drawGameHorses(viewProjectionMatrix, xPos, zPos, bMy) {
+    function drawGameHorses(viewProjectionMatrix, xPos, zPos, vecColor, bMy) {
         // Tell it to use our program (pair of shaders)
         gl.useProgram(program);
         
@@ -208,19 +221,19 @@
             positionLocation, size, type, normalize, stride, offset);
         
         // Turn on the color attribute
-        gl.enableVertexAttribArray(colorLocation);
+        //gl.enableVertexAttribArray(colorLocation);
         
         // Bind the color buffer.
-        gl.bindBuffer(gl.ARRAY_BUFFER, horsesColorBuffer);
+        //gl.bindBuffer(gl.ARRAY_BUFFER, horsesColorBuffer);
         
         // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
-        var size = 3;                 // 3 components per iteration
-        var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
-        var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
-        var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
-        var offset = 0;               // start at the beginning of the buffer
-        gl.vertexAttribPointer(
-            colorLocation, size, type, normalize, stride, offset);
+        //var size = 3;                 // 3 components per iteration
+        //var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
+        //var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
+        //var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+        //var offset = 0;               // start at the beginning of the buffer
+        //gl.vertexAttribPointer(
+        //    colorLocation, size, type, normalize, stride, offset);
 
         var nOffset = webglfigure.nDefaultBoardGap;
         var nXPos = xPos * nOffset;
@@ -230,6 +243,9 @@
             
         // Set the matrix.
         gl.uniformMatrix4fv(matrixLocation, false, matrix);
+
+        // Set color
+        gl.uniform4fv(colorLocation, vecColor);
 
         // Draw the geometry.
         var primitiveType = gl.TRIANGLES;
@@ -286,7 +302,13 @@
             var teamDice = gameUser.getUserDice(ii);
             var isMy = gameUser.isMyHorses(teamDice.team);
             var userPos = gameRule.getUserPosition(teamDice.dice);
-            drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1], isMy);
+            var vecColor;
+            if(isMy) {
+                vecColor = [0.5, 0.5, 0, 1];
+            }else {
+                vecColor = [0.5, 0, 0.5, 1];
+            }
+            drawGameHorses(viewProjectionMatrix, userPos[0], userPos[1], vecColor, isMy);
         }
     }
 
