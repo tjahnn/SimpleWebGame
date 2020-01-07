@@ -222,11 +222,20 @@
                 var scroeInfo = document.getElementById("score");
                 scroeInfo.style.display = "block";
                 scroeInfo.innerHTML = strVar;
+                var teamSelect = document.getElementById("team_dice_name");
+                if("block" == document.getElementById("team_dice_name").style.display) {
+                    data.teams.forEach(function(team) {
+                        var option = document.createElement("option");
+                        option.text = team._id;
+                        teamSelect.add(option);
+                    });
+                }
             }else if("manager" == data.code) {
                 bIsManager = data.manager;
                 document.getElementById("team_dice_name").style.display = "block";
                 document.getElementById("team_dice_num").style.display = "block";
                 document.getElementById("team_dice_apply").style.display = "block";
+                getTotalInfo();
             }
 
             webglMain.drawScene();
