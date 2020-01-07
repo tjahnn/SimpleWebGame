@@ -185,7 +185,7 @@
                 }else if(iy == (numFsY * 0.5) - 1) {
                     gl.uniform4fv(colorLocation, [1, 1, 0, 1]);
                 }else {
-                    gl.uniform4fv(colorLocation, [0.5, 0.5, 0.5, 1]);
+                    gl.uniform4fv(colorLocation, [0.5, 0.5, 0.5, 1]); // mid
                 }
     
                 // Draw the geometry.
