@@ -62,7 +62,7 @@ function applyTeamChance(id, name, chance) {
 }
 
 function getUserInfo(ws) {
-    var retVar;
+    var retVar = null;
     for(var ii = 0; ii < UserInfo.length; ++ii) {
         if(UserInfo[ii].userWS == ws) {
             retVar = UserInfo[ii];
@@ -143,56 +143,58 @@ function UpdateUserDice(ws, id, team, nUserVar, score) {
     if(isConnect(ws)) {
         // update dice
         var curUser = getUserInfo(ws);
-        if(curUser.id == id && curUser.team == team) {
-            MongoClient.connect(connectionUrl, function(err, client) {
-                console.log("Connected correctly to DB server : UpdateUserDice");
+        if(null != curUser) {
+            if(curUser.id == id && curUser.team == team) {
+                MongoClient.connect(connectionUrl, function(err, client) {
+                    console.log("Connected correctly to DB server : UpdateUserDice");
+                
+                    if (err) {
+                        console.log(err);
+                        return;
+                    }
+    
+                    console.log("teamChance before");
+                    console.log(teamChance);
+    
+                    // check chance
+                    var nChanceNum = 0;
+                    teamChance.forEach(function(teamInfo) {
+                        if(teamInfo.team == team) {
+                            nChanceNum = Number(teamInfo.chance);
+                        }
+                    });
+    
+                    console.log(team + " chance is " + nChanceNum);
+                    if(0 >= nChanceNum) {
+                        return;
+                    }
+    
+                    teamChance.forEach(function(teamInfo) {
+                        if(teamInfo.team == team) {
+                            teamInfo.chance = (nChanceNum - 1);
+                        }
+                    });
+    
+                    console.log("teamChance after");
+                    console.log(teamChance);
+    
+                    updateKey = {_id: team};
+                    updateVar = { $set: { dice: nUserVar }, $inc: { score: score } };
             
-                if (err) {
-                    console.log(err);
-                    return;
-                }
-
-                console.log("teamChance before");
-                console.log(teamChance);
-
-                // check chance
-                var nChanceNum = 0;
-                teamChance.forEach(function(teamInfo) {
-                    if(teamInfo.team == team) {
-                        nChanceNum = Number(teamInfo.chance);
-                    }
+                    var MongoDb = client.db(cadDB)
+                    var collec = MongoDb.collection(teamCollection);
+                    collec.updateMany(updateKey, updateVar, function(error,result){
+                        //here result will contain an array of records inserted
+                        if(!error) {
+                            console.log("Success : teamCollection dice update!");
+                        } else {
+                            console.log("teamCollection dice Some error was encountered!");
+                        }
+                    });
+                
+                    client.close()
                 });
-
-                console.log(team + " chance is " + nChanceNum);
-                if(0 >= nChanceNum) {
-                    return;
-                }
-
-                teamChance.forEach(function(teamInfo) {
-                    if(teamInfo.team == team) {
-                        teamInfo.chance = (nChanceNum - 1);
-                    }
-                });
-
-                console.log("teamChance after");
-                console.log(teamChance);
-
-                updateKey = {_id: team};
-                updateVar = { $set: { dice: nUserVar }, $inc: { score: score } };
-        
-                var MongoDb = client.db(cadDB)
-                var collec = MongoDb.collection(teamCollection);
-                collec.updateMany(updateKey, updateVar, function(error,result){
-                    //here result will contain an array of records inserted
-                    if(!error) {
-                        console.log("Success : teamCollection dice update!");
-                    } else {
-                        console.log("teamCollection dice Some error was encountered!");
-                    }
-                });
-            
-                client.close()
-            });
+            }
         }
     }
 
