@@ -155,7 +155,8 @@
 
     function connectServer() {
         //ws = new WebSocket("ws://localhost:8100");
-        ws = new WebSocket("ws://175.195.84.133:8100");
+        //ws = new WebSocket("ws://175.195.84.133:8100");
+        ws = new WebSocket("ws://168.63.240.237:8100");
 
         ws.onopen = function(e){
             alert("connect server");
