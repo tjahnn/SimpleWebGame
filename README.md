@@ -1,2 +1,3 @@
-# CadLeagueGame
-Cad Development Team League Game
+# SimpleWebGame
+SimpleWebGame
+Dice
